@@ -9,9 +9,10 @@ st.markdown("> **Atenção**: Este cálculo utiliza a metodologia da 'Base de C�
 aliquota_interna_pr = 19.5
 
 # Entrada dos valores dos produtos
-valor_4 = st.number_input("🔹 Linha 1 - Valor do Produto (ICMS Interestadual 4%)", min_value=0.0, format="%.2f", key="valor_4_pr_uc")
-valor_7 = st.number_input("�� Linha 2 - Valor do Produto (ICMS Interestadual 7%)", min_value=0.0, format="%.2f", key="valor_7_pr_uc")
-valor_12 = st.number_input("🔹 Linha 3 - Valor do Produto (ICMS Interestadual 12%)", min_value=0.0, format="%.2f", key="valor_12_pr_uc")
+# Adicionando step=None para remover os botões de incremento/decremento
+valor_4 = st.number_input("🔹 Linha 1 - Valor do Produto (ICMS Interestadual 4%)", min_value=0.0, format="%.2f", key="valor_4_pr_uc", step=None)
+valor_7 = st.number_input("🔹 Linha 2 - Valor do Produto (ICMS Interestadual 7%)", min_value=0.0, format="%.2f", key="valor_7_pr_uc", step=None)
+valor_12 = st.number_input("�� Linha 3 - Valor do Produto (ICMS Interestadual 12%)", min_value=0.0, format="%.2f", key="valor_12_pr_uc", step=None)
 
 def calcular_difal_uso_consumo(valor_produto, aliq_inter, aliq_interna_destino):
     """
@@ -42,7 +43,6 @@ def calcular_difal_uso_consumo(valor_produto, aliq_inter, aliq_interna_destino):
     difal = icms_destino_calculado - icms_origem
     
     # Alíquota Efetiva do DIFAL sobre o valor do produto
-    # É importante notar que a "alíquota efetiva" aqui é apenas o DIFAL em % sobre o valor do produto.
     efetiva = (difal / valor_produto) * 100
     
     return base_calculo_unica, icms_origem, difal, efetiva
@@ -56,6 +56,9 @@ def format_pct(v):
     return f"{v:.2f}%"
 
 if st.button("🧾 Calcular DIFAL para PR (Uso e Consumo)"):
+    # Inicializa o somatório total do DIFAL
+    total_difal_recolher = 0.0
+
     # Lista de cenários a serem simulados (valor do produto, alíquota interestadual, rótulo)
     simulacoes = [
         (valor_4, 4.0, "Linha 1 - ICMS Interestadual 4%"),
@@ -72,7 +75,18 @@ if st.button("🧾 Calcular DIFAL para PR (Uso e Consumo)"):
         else:
             st.write(f"**▶ Valor do Produto (Base Única):** {format_brl(base)}")
             st.write(f"**▶ ICMS de Origem ({aliq_inter_cenario}%):** {format_brl(icms_origem)}")
-            st.write(f"**▶ ICMS Interno PR ({aliquota_interna_pr}%):** {format_brl(base * (aliquota_interna_pr / 100))}") # Explicitar o ICMS interno PR
+            st.write(f"**▶ ICMS Interno PR ({aliquota_interna_pr}%):** {format_brl(base * (aliquota_interna_pr / 100))}") 
             st.write(f"**▶ DIFAL a Recolher para o PR:** {format_brl(difal)}")
             st.write(f"**▶ Alíquota Efetiva do DIFAL:** {format_pct(efetiva)}")
             st.markdown("---")
+            
+            # Adiciona o DIFAL calculado para esta linha ao total geral
+            total_difal_recolher += difal
+    
+    # Exibe o somatório total do DIFAL a recolher
+    if total_difal_recolher > 0:
+        st.markdown("---") # Separador para o total
+        st.subheader("📊 Resumo Total")
+        st.metric(label="Valor Total do DIFAL a Recolher para o PR", value=format_brl(total_difal_recolher))
+    else:
+        st.info("Nenhum valor de produto foi inserido para calcular o DIFAL total.")
